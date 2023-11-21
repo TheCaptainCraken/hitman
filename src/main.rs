@@ -1,4 +1,11 @@
 use clap::{Parser, Subcommand};
+use std::ffi::OsString;
+
+mod config;
+mod free;
+mod kidnap;
+mod massacre;
+mod utilities;
 
 #[derive(Parser, Debug)]
 struct Cli {
@@ -9,20 +16,14 @@ struct Cli {
 #[derive(Subcommand, Debug)]
 enum Command {
     #[command()]
-    /// Removes a file or a list of files.
-    /// It also removes folders and it's recursive.
-    /// This is safe meaning the files don't get deleted but just moved to a folder known as 'the basement'.
+    /// Safely removes a file or a list of files.
     Kidnap {
         /// File or folder to remove.
-        targets: std::ffi::OsString,
+        target: OsString,
 
         #[arg(long, default_value_t = false)]
-        /// Permanently removes the files instead of moving them.
+        /// Permanently deletes the files instead of moving them.
         kill: bool,
-
-        #[arg(short, long, default_value = None)]
-        /// List of files and/or subfolders to ignore.
-        spare: Option<Vec<std::ffi::OsString>>,
 
         #[arg(short, long, default_value_t = false)]
         /// Show the name of every file kidnapped.
@@ -33,34 +34,51 @@ enum Command {
     /// Restores a file or folder to their old location
     Free {
         /// File or folder to restore.
-        target: std::ffi::OsString,
+        target: OsString,
 
         #[arg(short, long, default_value = ".")]
         /// New location for the file instead of the older
-        location: std::ffi::OsString,
+        new_location: OsString,
+
+        #[arg(short, long, default_value_t = false)]
+        /// Show the name of every file freed.
+        verbose: bool,
     },
 
     #[command()]
     /// List the files that can be restored.
-    ListKidnapped,
+    ListKidnapped {
+        #[arg(short, long, default_value_t = false)]
+        /// Show the name of every file and subfolders.
+        recursive: bool,
+    },
 
     #[command()]
     /// Deletes the contents of the recovery folder permanently.
-    Massacre,
+    Massacre {
+        #[arg(short, long, default_value_t = false)]
+        /// Show the name of every file massacred.
+        verbose: bool,
+    },
 }
 
-fn main() {
+fn main() -> Result<(), std::io::Error> {
     let args = Cli::parse();
 
     match args.command {
-        Command::Massacre => println!("Nuke!"),
+        Command::Massacre { verbose } => massacre::handle_massacre(verbose)?,
         Command::Kidnap {
-            targets: path,
-            kill: destroy,
-            spare: ignore,
-            verbose
-        } => println!("{:?} {} {:?} {}", path, destroy, ignore, verbose),
-        Command::Free { target, location } => println!("{:?} {:?}", target, location),
-        Command::ListKidnapped => println!("restorables"),
+            target,
+            kill,
+            verbose,
+        } => kidnap::handle_kidnap(target, kill, verbose)?,
+        Command::Free {
+            target,
+            new_location,
+            verbose,
+        } => free::free(target, new_location, verbose)?,
+        Command::ListKidnapped { recursive } => kidnap::list_kidnapped(recursive)?,
     };
+
+    Ok(())
 }
