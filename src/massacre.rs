@@ -1,10 +1,11 @@
-use std::{fs, io::Error, path::Path};
+use crate::utilities;
+use std::io::Error;
 
-use crate::{config, utilities};
+pub fn handle_massacre() -> Result<(), Error> {
+    let path_to_basement = utilities::get_absolute_path_to_basement()?;
 
-pub fn handle_massacre(verbose: bool) -> Result<(), Error> {
-    let path_to_basement = Path::new(config::basement_folder);
-    fs::create_dir_all(path_to_basement)?;
-    utilities::delete_files(path_to_basement, verbose)?;
+    utilities::delete_directory(path_to_basement.to_path_buf())?;
+
+    println!("I have killed everyone of my innocent hosteges. They suffered.");
     Ok(())
 }

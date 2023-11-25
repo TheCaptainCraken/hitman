@@ -1,5 +1,5 @@
 #[cfg(target_os = "linux")]
-pub static basement_folder: &str = "~/.config/basement";
+pub static BASEMENT_FOLDER: &str = "/home/pi/.config/hitman_basement";
 
 #[cfg(target_os = "windows")]
 pub static basement_folder: &str = "C:/config";
